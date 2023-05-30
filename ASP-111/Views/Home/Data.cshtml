@@ -1,0 +1,60 @@
+﻿@{
+    ViewData["Title"] = "Data";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Контекст данных</h1>
+</div>
+
+<ul>
+    <li>
+        Подключаем пакеты NuGet для работы с EntityFramework (MySql):
+        <ol>
+            <li>Microsoft.EntityFrameworkCore</li>
+            <li>Microsoft.EntityFrameworkCore.Tools</li>
+            <li>Pomelo.EntityFrameworkCore.MySql</li>
+        </ol>
+    </li>
+    <li>
+        Создаем папку Data, в ней класс DataContext (наследник DbContext)
+    </li>
+    <li>
+        Поскольку контекст данных будет попадать в контейнер служб, его
+        конфигурацией также будет руководить контейнер. Поэтому, в классе
+        объявляем конструктор с опциями
+        <code>public DataContext(DbContextOptions options) : base(options) {}</code>
+    </li>
+    <li>
+        База данных на PlanetScale одна, поэтому будем разделять таблицы
+        по схемам. Для этого в классе контекста указываем:<br />
+        <code>
+            protected override void OnModelCreating(ModelBuilder modelBuilder)<br />
+            {<br />
+            &emsp; modelBuilder.HasDefaultSchema("asp111");<br />
+            }<br />
+        </code>
+        Это означает, что таблицы нашего проекта (ASP-111) будут группироваться
+        в схеме "asp111"
+    </li>
+    <li>
+        В Program.cs указываем подключение и его настройки, главная особенность
+        MySQL состоит в том, что он не поддерживает схемы, поэтому группировку
+        таблиц по схемам заменяем на префиксное именование (названия таблиц
+        начинаются с названия схемы) - <code> (schema, table) => $"{schema}_{table}"</code>
+    </li>
+    <li>
+        Создаем новую папку Data/Entities, в ней описываем класс User, в
+        контексте добавляем свойство Users
+    </li>
+    <li>
+        Создаем миграцию<br />
+        В созданном файле миграции убираем (или комментируем) строки<br />
+        <code>
+            <br />
+            migrationBuilder.AlterDatabase()<br />
+            .Annotation("MySql:CharSet", "utf8mb4");<br />
+        </code>
+        (Это только для PlanetScale, в ней нет прав на такую операцию)
+    </li>
+
+</ul>

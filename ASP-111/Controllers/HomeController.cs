@@ -35,6 +35,10 @@ namespace ASP_111.Controllers
             ViewData["date"] = _dateService.GetDate();
             return View();
         }
+        public ViewResult Data()
+        {
+            return View();
+        }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
