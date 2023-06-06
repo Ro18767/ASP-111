@@ -1,5 +1,6 @@
 ﻿using ASP_111.Data;
 using ASP_111.Models.User;
+using ASP_111.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.RegularExpressions;
 
@@ -7,11 +8,17 @@ namespace ASP_111.Controllers
 {
     public class UserController : Controller
     {
+
         private readonly DataContext _dataContext;
 
-        public UserController(DataContext dataContext)
+        private readonly ILogger<UserController> _logger;
+        private readonly ValidatorService _validatorService;
+
+        public UserController(DataContext dataContext, ILogger<UserController> logger, ValidatorService validatorService)
         {
             _dataContext = dataContext;
+            _logger = logger;
+            _validatorService = validatorService;
         }
 
         public IActionResult Index()

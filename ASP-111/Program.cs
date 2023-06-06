@@ -13,6 +13,8 @@ builder.Services.AddControllersWithViews();
 
 builder.Services.AddSingleton<IDateService, DateService>();
 
+builder.Services.AddSingleton<ValidatorService>();
+
 String? connectionString =
     builder.Configuration.GetConnectionString("PlanetScale");
 MySqlConnection connection = new(connectionString);
