@@ -29,7 +29,19 @@ namespace ASP_111.Controllers
         {
             return View();
         }
+        public ViewResult Middleware()
+        {
+            ViewData["marker"] =
+      HttpContext.Items.ContainsKey("marker")
+      ? HttpContext.Items["marker"]
+      : "Нет маркера";
+            return View();
+        }
 
+        public IActionResult Razor()
+        {
+            return View();
+        }
         public ViewResult Services()
         {
             ViewData["date"] = _dateService.GetDate();
