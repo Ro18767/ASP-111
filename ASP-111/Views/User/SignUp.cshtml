@@ -8,83 +8,163 @@
 </div>
 
 @(Model.FormModel == null ? "первый ввод" : "даные переданы")
+
 <div class="row">
     <div class="col col-8">
         <form asp-action="SignUp" enctype="multipart/form-data" method="post">
-
+            @{
+                string validClass = "";
+            }
+            @{
+                validClass = Model.FormModel == null ? ""
+                : Model.LoginMessage == null ? "is-valid" : "is-invalid";
+            }
             <label for="user-login" class="form-label">Логін</label>
             <div class="input-group mb-3">
                 <span class="input-group-text py-0 px-2"
                       id="user-login-addon"><i class="bi-person fs-bi"></i></span>
-                <input type="text" class="form-control is-invalid"
+                <input type="text" class="form-control @validClass"
                        id="user-login" name="user-login"
                        placeholder="Виберіть логін"
+                       value="@Model.FormModel?.Login"
                        aria-describedby="user-login-addon">
+                @if (Model.LoginMessage != null)
+                {
+                    <div class="invalid-feedback">
+                        @Model.LoginMessage
+                    </div>
+                }
             </div>
-
+            <div class="invalid-feedback">
+                @(Model.FormModel?.Login?.Length)
+            </div>
+            @{
+                validClass = Model.FormModel == null ? ""
+                : Model.PasswordMessage == null ? "is-valid" : "is-invalid";
+            }
             <label for="user-password" class="form-label">Пароль</label>
             <div class="input-group mb-3">
                 <span class="input-group-text py-0 px-2"
                       id="user-password-addon"><i class="bi-lock fs-bi"></i></span>
-                <input type="password" class="form-control is-valid"
+                <input type="password" class="form-control @validClass"
                        id="user-password" name="user-password"
                        placeholder="Виберіть пароль"
+                       value="@Model.FormModel?.Password"
                        aria-describedby="user-password-addon">
+                @if (Model.PasswordMessage != null)
+                {
+                    <div class="invalid-feedback">
+                        @Model.PasswordMessage
+                    </div>
+                }
             </div>
 
+            @{
+                validClass = Model.FormModel == null ? ""
+                : Model.ReapetMessage == null ? "is-valid" : "is-invalid";
+            }
             <label for="user-repeat" class="form-label">Підтвердіть пароль</label>
             <div class="input-group mb-3">
                 <span class="input-group-text py-0 px-2"
                       id="user-repeat-addon"><i class="bi-unlock fs-bi"></i></span>
-                <input type="password" class="form-control"
+                <input type="password" class="form-control @validClass"
                        id="user-repeat" name="user-repeat"
                        placeholder="Повторіть пароль"
+                       value="@Model.FormModel?.RepeatPassword"
                        aria-describedby="user-repeat-addon">
+                @if (Model.ReapetMessage != null)
+                {
+                    <div class="invalid-feedback">
+                        @Model.ReapetMessage
+                    </div>
+                }
             </div>
 
+            @{
+                validClass = Model.FormModel == null ? ""
+                : Model.RealNameMessage == null ? "is-valid" : "is-invalid";
+            }
             <label for="user-name" class="form-label">
                 Реальне ім'я (не обов'язково)
             </label>
             <div class="input-group mb-3">
                 <span class="input-group-text py-0 px-2"
                       id="user-name-addon"><i class="bi-person fs-bi"></i></span>
-                <input type="text" class="form-control"
+                <input type="text" class="form-control @validClass"
                        id="user-name" name="user-name"
                        placeholder="Ім'я використовується для листування з вами"
+                       value="@Model.FormModel?.RealName"
                        aria-describedby="user-name-addon">
+                @if (Model.RealNameMessage != null)
+                {
+                    <div class="invalid-feedback">
+                        @Model.RealNameMessage
+                    </div>
+                }
             </div>
 
+            @{
+                validClass = Model.FormModel == null ? ""
+                : Model.EmailMessage == null ? "is-valid" : "is-invalid";
+            }
             <label for="user-email" class="form-label">Email</label>
             <div class="input-group mb-0">
                 <span class="input-group-text py-0 px-2"
                       id="user-email-addon"><i class="bi-envelope-at fs-bi"></i></span>
-                <input type="email" class="form-control"
+                <input type="email" class="form-control @validClass"
                        id="user-email" name="user-email"
                        placeholder="Ваша електронна пошта"
+                       value="@Model.FormModel?.Email"
                        aria-describedby="user-email-addon">
+                @if (Model.EmailMessage != null)
+                {
+                    <div class="invalid-feedback">
+                        @Model.EmailMessage
+                    </div>
+                }
             </div>
             <div id="emailHelp" class="form-text mb-3">Без вашої згоди ці відомості поширені не будуть.</div>
 
+            @{
+                validClass = Model.FormModel == null ? ""
+                : Model.AvatarMessage == null ? "is-valid" : "is-invalid";
+            }
             <label for="user-avatar" class="form-label">Аватарка</label>
             <div class="input-group mb-3">
                 <span class="input-group-text py-0 px-2"
                       id="user-avatar-addon"><i class="bi-person-circle fs-bi"></i></span>
-                <input type="file" class="form-control custom-file-input"
+                <input type="file" class="form-control custom-file-input @validClass"
                        id="user-avatar" name="user-avatar"
+                       value="@Model.FormModel?.Avatar"
                        aria-describedby="user-avatar-addon">
+                @if (Model.AvatarMessage != null)
+                {
+                    <div class="invalid-feedback">
+                        @Model.AvatarMessage
+                    </div>
+                }
             </div>
 
+            @{
+                validClass = Model.FormModel == null ? ""
+                : Model.ConfirmMessage == null ? "is-valid" : "is-invalid";
+            }
             <label for="user-confirm" class="form-label">Правила сайту</label>
             <div class="input-group mb-3 align-items-center">
                 <span class="input-group-text py-0 px-2"
                       id="user-confirm-addon"><i class="bi-file-earmark-text fs-bi"></i></span>
                 <div class="form-check mx-3">
-                    <input type="checkbox" class="form-check-input" id="exampleCheck1"
-                           name="user-confirm" value="true"
-                           aria-describedby="user-check-addon">
+                    <input type="checkbox" class="form-check-input @validClass" id="exampleCheck1" aria-describedby="user-check-addon"
+                           name="user-confirm" value="true" checked="@(Model.FormModel?.IsAgree ?? false)" />
                     <label class="form-check-label" for="exampleCheck1">Згоден дотримуватись правил сайту</label>
                 </div>
                 <button type="submit" class="btn btn-primary ms-auto">Зареєструватись</button>
+                @if (Model.ConfirmMessage != null)
+                {
+                    <div class="invalid-feedback">
+                        @Model.ConfirmMessage
+                    </div>
+                }
             </div>
         </form>
     </div>

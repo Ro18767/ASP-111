@@ -2,6 +2,7 @@
 using ASP_111.Models.User;
 using ASP_111.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Net.Mail;
 using System.Text.RegularExpressions;
 
 namespace ASP_111.Controllers
@@ -31,7 +32,7 @@ namespace ASP_111.Controllers
             if (Request.Method == "POST" && formModel != null)
             {
                 viewModel = ValidateSignUpForm(formModel);
-                viewModel.FormModel = new();
+                viewModel.FormModel = formModel;
             }
             else
             {
@@ -76,15 +77,69 @@ namespace ASP_111.Controllers
                 viewModel.PasswordMessage = null;
             }
 
-            if (formModel.Password != null)
+            if (viewModel.PasswordMessage is not null)
             {
-                viewModel.AvatarMessage = "логин не может быть пустым";
+                viewModel.ReapetMessage = "пароль не может быть пустым";
+            }
+            else if (String.IsNullOrEmpty(formModel.RepeatPassword))
+            {
+                viewModel.ReapetMessage = "повторите пароль для потверждения";
+            }
+            else if (formModel.RepeatPassword != formModel.Password)
+            {
+                viewModel.ReapetMessage = "пароль не совпадает";
             }
             else
             {
-                viewModel.PasswordMessage = null;
+                viewModel.ReapetMessage = null;
             }
 
+            if (formModel.Avatar is null)
+            {
+                viewModel.AvatarMessage = "аватара нет";
+            }
+            else
+            {
+                viewModel.AvatarMessage = null;
+            }
+
+           
+
+            if (String.IsNullOrEmpty(formModel.RealName))
+            {
+                viewModel.RealNameMessage = null;
+            }
+            else
+            {
+                viewModel.RealNameMessage = null;
+            }
+
+            if (String.IsNullOrEmpty(formModel.Email))
+            {
+                viewModel.EmailMessage = null;
+                formModel.Email = null;
+            }
+            else
+            {
+
+                try
+                {
+                    MailAddress m = new MailAddress(formModel.Email);
+                    viewModel.EmailMessage = null;
+                }
+                catch (FormatException)
+                {
+                    viewModel.EmailMessage = "неправильный формат почты";
+                }
+            }
+            if (!formModel.IsAgree)
+            {
+                viewModel.ConfirmMessage = "должен быть согласен на с условиями";
+            }
+            else
+            {
+                viewModel.ConfirmMessage = null;
+            }
 
             return viewModel;
         }
