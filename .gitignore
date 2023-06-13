@@ -365,3 +365,5 @@ FodyWeavers.xsd
 /ASP-111/appsettings-example.json
 /ASP-111/appsettings.Development.json
 /ASP-111/appsettings.json
+/ASP-111/wwwroot/avatars/*
+!/ASP-111/wwwroot/avatars/no-avatar.png

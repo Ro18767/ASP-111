@@ -1,6 +1,7 @@
 using ASP_111.Data;
 using ASP_111.Middleware;
 using ASP_111.Services;
+using ASP_111.Services.Hash;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
 using MySqlConnector;
@@ -14,6 +15,17 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddSingleton<IDateService, DateService>();
 
 builder.Services.AddSingleton<ValidatorService>();
+
+builder.Services.AddSingleton<IHashService, Md5HashService>();
+
+builder.Services.AddDistributedMemoryCache();
+
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromSeconds(300);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
 
 String? connectionString =
     builder.Configuration.GetConnectionString("PlanetScale");
@@ -51,6 +63,10 @@ app.UseRouting();
 app.UseMarker();
 
 app.UseAuthorization();
+
+app.UseSession();
+
+app.UseAuthSession();
 
 app.MapControllerRoute(
     name: "default",

@@ -1,9 +1,11 @@
 ﻿using ASP_111.Data;
 using ASP_111.Models.User;
 using ASP_111.Services;
+using ASP_111.Services.Hash;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Mail;
 using System.Text.RegularExpressions;
+using System.Security.Claims;
 
 namespace ASP_111.Controllers
 {
@@ -12,20 +14,66 @@ namespace ASP_111.Controllers
 
         private readonly DataContext _dataContext;
 
+
         private readonly ILogger<UserController> _logger;
         private readonly ValidatorService _validatorService;
+        private readonly IHashService _hashService;
 
-        public UserController(DataContext dataContext, ILogger<UserController> logger, ValidatorService validatorService)
+        public UserController(DataContext dataContext, ILogger<UserController> logger, ValidatorService validatorService, IHashService hashService)
         {
             _dataContext = dataContext;
             _logger = logger;
             _validatorService = validatorService;
+            _hashService = hashService;
         }
 
         public IActionResult Index()
         {
             return View();
         }
+
+        public ViewResult Profile()
+        {
+            String? userId = HttpContext.User.Claims
+                         .FirstOrDefault(c => c.Type == ClaimTypes.Sid)?.Value;
+
+            ProfileViewModel model = null!;
+            if (userId is not null)
+            {
+                // находим данные о пользователе по ид
+                var user = _dataContext.Users.Find(Guid.Parse(userId));
+                if (user is not null)
+                {
+                    model = new()
+                    {
+                        Name = user.Name,
+                        Email = user.Email ?? "",
+                        Avatar = user.Avatar ?? "no-photo.png",
+                        CreatedDt = user.CreatedDt,
+                        Login = user.Login,
+                    };
+                }
+            }
+            return View(model);
+        }
+
+
+
+        [HttpPost]  // этот метод будет вызываться по AJAX при аутентификации
+        public JsonResult Auth([FromBody] AuthAjaxModel model)
+        {
+            var user = _dataContext.Users.FirstOrDefault(
+                u => u.Login == model.Login
+                    && u.PasswordHash == _hashService.GetHash(model.Password)
+                );
+            // сохранение информации об аутентификации в сессии
+            if (user != null)
+            {
+                HttpContext.Session.SetString("userId", user.Id.ToString());
+            }
+            return Json(new { Success = (user != null) });
+        }
+
         public ViewResult SignUp(SignUpFormModel? formModel)
         {
             SignUpViewModel viewModel;
@@ -41,6 +89,17 @@ namespace ASP_111.Controllers
             }
             return View(viewModel);
         }
+
+        public RedirectToActionResult Logout()
+        {
+            /* Выход из авторизированного режима всегда должен
+             * перенаправить на страницу, которая доступна без авторизации
+             * Чаще всего - на домашнюю страницу
+             */
+            HttpContext.Session.Remove("userId");
+            return RedirectToAction("Index", "Home");
+        }
+
         private SignUpViewModel ValidateSignUpForm(SignUpFormModel formModel)
         {
             SignUpViewModel viewModel = new();
@@ -94,14 +153,6 @@ namespace ASP_111.Controllers
                 viewModel.ReapetMessage = null;
             }
 
-            if (formModel.Avatar is null)
-            {
-                viewModel.AvatarMessage = "аватара нет";
-            }
-            else
-            {
-                viewModel.AvatarMessage = null;
-            }
 
            
 
@@ -139,6 +190,67 @@ namespace ASP_111.Controllers
             else
             {
                 viewModel.ConfirmMessage = null;
+            }
+            String? nameAvatar = null;
+            if (formModel.Avatar is not null)  // файл передан
+            {
+                /* При приема файла важно:
+                 * - проверить допустимые расширения (тип)
+                 * - проверить максимальный размер
+                 * - заменить имя файла
+                 * Создаем папку (вручную) wwwroot/avatars/
+                 *  и в нее будем сохранять файлы, расширения - оставляем
+                 *  какие есть, а вместо имени - используем GUID
+                 */
+                if (formModel.Avatar.Length > 1048576)
+                {
+                    viewModel.AvatarMessage = "Файл слишком большой (макс 1 МБ)";
+                }
+                // определяем расширение файла
+                String ext = Path.GetExtension(formModel.Avatar.FileName);
+
+                switch (ext)
+                {
+                    case ".png":
+                    case ".jpg":
+                        break;
+                    default:
+                        viewModel.AvatarMessage = "Файлы только .png и .jpg";
+                        break;
+                }
+                // проверить расширение на перечень допустимых
+
+                if(viewModel.AvatarMessage is null)
+                {
+                    // формируем имя для файла
+                    nameAvatar = Guid.NewGuid().ToString() + ext;
+
+                    formModel.Avatar.CopyTo(
+                        new FileStream("wwwroot/avatars/" + nameAvatar, FileMode.Create));
+                }
+    
+            }
+            else
+            {
+                viewModel.AvatarMessage = null;
+            }
+
+            if (viewModel.LoginMessage == null
+         && viewModel.PasswordMessage == null
+         && viewModel.AvatarMessage == null)
+            {
+                // Все проверки пройдены успешно - добавляем пользователя в БД
+                _dataContext.Users.Add(new()
+                {
+                    Id = Guid.NewGuid(),
+                    Login = formModel.Login,
+                    PasswordHash = _hashService.GetHash(formModel.Password),
+                    Email = formModel.Email,
+                    CreatedDt = DateTime.Now,
+                    Name = formModel.RealName ?? formModel.Login,
+                    Avatar = nameAvatar,
+                });
+                _dataContext.SaveChanges();
             }
 
             return viewModel;
