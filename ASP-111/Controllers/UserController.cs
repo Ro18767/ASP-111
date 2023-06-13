@@ -224,9 +224,12 @@ namespace ASP_111.Controllers
                 {
                     // формируем имя для файла
                     nameAvatar = Guid.NewGuid().ToString() + ext;
+                    using (var fstream = new FileStream("wwwroot/avatars/" + nameAvatar, FileMode.Create))
+                    {
+                        formModel.Avatar.CopyTo(fstream);
+                    }
+                        
 
-                    formModel.Avatar.CopyTo(
-                        new FileStream("wwwroot/avatars/" + nameAvatar, FileMode.Create));
                 }
     
             }
