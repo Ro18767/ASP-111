@@ -18,6 +18,7 @@ builder.Services.AddSingleton<ValidatorService>();
 
 builder.Services.AddSingleton<IHashService, Md5HashService>();
 
+
 builder.Services.AddDistributedMemoryCache();
 
 builder.Services.AddSession(options =>

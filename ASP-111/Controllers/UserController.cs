@@ -90,6 +90,7 @@ namespace ASP_111.Controllers
             }
 
             SignUpViewModel viewModel;
+            Console.WriteLine(this.Request.Method);
             if (Request.Method == "POST" && formModel != null)
             {
                 viewModel = ValidateSignUpForm(formModel);

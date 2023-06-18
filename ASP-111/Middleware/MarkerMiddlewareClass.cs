@@ -1,21 +1,33 @@
-﻿namespace ASP_111.Middleware
+﻿using ASP_111.Data;
+namespace ASP_111.Middleware
 {
     public class MarkerMiddleware
     {
         private readonly RequestDelegate _next;
+        private static int _method_get_cnt;
+        private static int _method_post_cnt;
 
         public MarkerMiddleware(RequestDelegate next)
         {
             _next = next;
+            _method_get_cnt = 0;
+            _method_post_cnt = 0;
             /* Похожее на инъекцию внедрение, но это не служба, а "связка"
              * цепочки Middleware путем передачи в каждый из классов ссылки
              * на следующий элемент цепочки.
              */
         }
 
-        public async Task InvokeAsync(HttpContext context)
+        public async Task InvokeAsync(HttpContext context, DataContext dataContext)
         {
-            context.Items.Add("marker", "TheMarker");
+            if (context.Request.Method == "GET") _method_get_cnt++;
+            if (context.Request.Method == "POST") _method_post_cnt++;
+            if (context.Items.ContainsKey("marker")) context.Items.Remove("marker");
+            context.Items.Add("marker",
+               $"TheMarker" + "\n" +
+               $"{dataContext.Users.Count()} users" + "\n" +
+               $"{_method_get_cnt} GET requests" + "\n" +
+               $"{_method_post_cnt} POST requests");
             await _next(context);
         }
 
