@@ -57,5 +57,37 @@ namespace ASP_111.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
+
+        public ViewResult Sessions()
+        {
+            if (HttpContext.Session.Keys.Contains("StoredValue"))
+            {
+                ViewData["StoredValue"] = HttpContext.Session.GetString("StoredValue");
+            }
+            else
+            {
+                ViewData["StoredValue"] = "";
+            }
+            return View();
+        }
+        public RedirectToActionResult SetSession()
+        {
+            HttpContext.Session.SetString("StoredValue", "Данные в сессии");
+            return RedirectToAction(nameof(Sessions));
+            /* Browser                  ASP
+             * 
+             * SetSession -----------> redirect
+             *  302       <----------     save in session
+             *  location: Sessions                    |
+             *                                        |
+             * Sessions --------------> View          |
+             *   200    <-------------    get from session
+             */
+        }
+        public RedirectToActionResult RemoveSession()
+        {
+            HttpContext.Session.Remove("StoredValue");
+            return RedirectToAction(nameof(Sessions));
+        }
     }
 }

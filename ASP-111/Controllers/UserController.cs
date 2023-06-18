@@ -2,6 +2,7 @@
 using ASP_111.Models.User;
 using ASP_111.Services;
 using ASP_111.Services.Hash;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Mail;
 using System.Text.RegularExpressions;
@@ -48,7 +49,7 @@ namespace ASP_111.Controllers
                     {
                         Name = user.Name,
                         Email = user.Email ?? "",
-                        Avatar = user.Avatar ?? "no-photo.png",
+                        Avatar = user.Avatar ?? "no-avatar.png",
                         CreatedDt = user.CreatedDt,
                         Login = user.Login,
                     };
@@ -74,18 +75,57 @@ namespace ASP_111.Controllers
             return Json(new { Success = (user != null) });
         }
 
-        public ViewResult SignUp(SignUpFormModel? formModel)
+        public IActionResult SignUp(SignUpFormModel? formModel)
         {
+            String? userId = HttpContext.User.Claims
+                         .FirstOrDefault(c => c.Type == ClaimTypes.Sid)?.Value;
+            if (userId is not null)
+            {
+                // находим данные о пользователе по ид
+                var user = _dataContext.Users.Find(Guid.Parse(userId));
+                if (user is not null)
+                {
+                    return RedirectToAction(nameof(Profile));
+                }
+            }
+
             SignUpViewModel viewModel;
             if (Request.Method == "POST" && formModel != null)
             {
                 viewModel = ValidateSignUpForm(formModel);
                 viewModel.FormModel = formModel;
+                viewModel.FormModel.Avatar = null!;
+                if(viewModel.SignUpCompleted) viewModel.FormModel = null;
+
+                // сохранить данные, необходимые для View, в сессии и redirect
+                HttpContext.Session.SetString("FormData",
+                    System.Text.Json.JsonSerializer.Serialize(viewModel));
+                return RedirectToAction(nameof(SignUp));
             }
             else
             {
-                viewModel = new();
-                viewModel.FormModel = null;
+                // проверить есть ли сохраненные данные, если есть - использовать
+                //  и удалить
+                if (HttpContext.Session.Keys.Contains("FormData"))
+                {
+                    String? data = HttpContext.Session.GetString("FormData");
+                    if (data != null)
+                    {
+                        viewModel = System.Text.Json.JsonSerializer
+                            .Deserialize<SignUpViewModel>(data)!;
+                    }
+                    else
+                    {
+                        viewModel = null!;
+                    }
+                    HttpContext.Session.Remove("FormData");
+                }
+                else
+                {
+                    // первый заход - начало заполнения формы
+                    viewModel = new();
+                    viewModel.FormModel = null;  // нечего проверять
+                }
             }
             return View(viewModel);
         }
@@ -238,23 +278,26 @@ namespace ASP_111.Controllers
                 viewModel.AvatarMessage = null;
             }
 
-            if (viewModel.LoginMessage == null
-         && viewModel.PasswordMessage == null
-         && viewModel.AvatarMessage == null)
+            if (viewModel.LoginMessage != null) return viewModel;
+            if (viewModel.PasswordMessage != null) return viewModel;
+            if (viewModel.ReapetMessage != null) return viewModel;
+            if (viewModel.AvatarMessage != null) return viewModel;
+            if (viewModel.ConfirmMessage != null) return viewModel;
+
+            // Все проверки пройдены успешно - добавляем пользователя в БД
+            _dataContext.Users.Add(new()
             {
-                // Все проверки пройдены успешно - добавляем пользователя в БД
-                _dataContext.Users.Add(new()
-                {
-                    Id = Guid.NewGuid(),
-                    Login = formModel.Login,
-                    PasswordHash = _hashService.GetHash(formModel.Password),
-                    Email = formModel.Email,
-                    CreatedDt = DateTime.Now,
-                    Name = formModel.RealName ?? formModel.Login,
-                    Avatar = nameAvatar,
-                });
-                _dataContext.SaveChanges();
-            }
+                Id = Guid.NewGuid(),
+                Login = formModel.Login,
+                PasswordHash = _hashService.GetHash(formModel.Password),
+                Email = formModel.Email,
+                CreatedDt = DateTime.Now,
+                Name = formModel.RealName ?? formModel.Login,
+                Avatar = nameAvatar,
+            });
+            _dataContext.SaveChanges();
+
+            viewModel.SignUpCompleted = true;
 
             return viewModel;
         }

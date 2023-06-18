@@ -14,5 +14,6 @@ namespace ASP_111.Models.User
         public string? AvatarMessage { get; set; }
         public string? ConfirmMessage { get; set; }
         public SignUpFormModel? FormModel { get; set; }
+        public bool SignUpCompleted { get; set; } = false;
     }
 }

@@ -3,11 +3,30 @@
     ViewData["Title"] = "SignUp";
 }
 
+
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3 z-1">
+    @if (Model.SignUpCompleted)
+    {
+        <div class="toast fade show" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">SingUp Successful</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="toast" data-bs-toggle="modal" data-bs-target="#authModal">LogIn</button>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="toast">Close</button>
+            </div>
+        </div>
+    }
+    
+</div>
+
 <div class="text-center">
     <h1 class="display-4">Регистрация нового пользователя</h1>
 </div>
 
-@(Model.FormModel == null ? "первый ввод" : "даные переданы")
+@*@(Model.FormModel == null ? "первый ввод" : "даные переданы")*@
 
 <div class="row">
     <div class="col col-8">
@@ -127,7 +146,7 @@
 
             @{
                 validClass = Model.FormModel == null ? ""
-                : Model.AvatarMessage == null ? "is-valid" : "is-invalid";
+                : Model.AvatarMessage == null ? "" : "is-invalid";
             }
             <label for="user-avatar" class="form-label">Аватарка</label>
             <div class="input-group mb-3">
