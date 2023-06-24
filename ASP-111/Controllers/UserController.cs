@@ -1,5 +1,6 @@
 ﻿using ASP_111.Data;
 using ASP_111.Models.User;
+using ASP_111.Services.Email;
 using ASP_111.Services;
 using ASP_111.Services.Hash;
 using Microsoft.AspNetCore.Http;
@@ -19,15 +20,64 @@ namespace ASP_111.Controllers
         private readonly ILogger<UserController> _logger;
         private readonly ValidatorService _validatorService;
         private readonly IHashService _hashService;
+        private readonly IEmailService _emailService;
 
-        public UserController(DataContext dataContext, ILogger<UserController> logger, ValidatorService validatorService, IHashService hashService)
+        public UserController(DataContext dataContext, ILogger<UserController> logger, ValidatorService validatorService, IHashService hashService, IEmailService emailService)
         {
             _dataContext = dataContext;
             _logger = logger;
             _validatorService = validatorService;
             _hashService = hashService;
+            _emailService = emailService;
         }
+        public JsonResult UpdateEmail(String email)
+        {
+            // _logger.LogInformation("UpdateEmail works {email}", email);
+            // проверяем что пользователь аутентифицирован
+            if (HttpContext.User.Identity?.IsAuthenticated != true)
+            {
+                return Json(new { success = false, message = "UnAuthenticated" });
+            }
+            Guid userId;
+            try
+            {   // извлекаем из Claims ID и ...
+                userId = Guid.Parse(
+                    HttpContext.User.Claims.First(
+                        c => c.Type == ClaimTypes.Sid
+                    ).Value);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("UpdateEmail exception {ex}", ex.Message);
+                return Json(new { success = false, message = "UnAuthorized" });
+            }
+            // ... находим по нему пользователя
+            var user = _dataContext.Users.Find(userId);
+            if (user == null)
+            {
+                return Json(new { success = false, message = "Access denied" });
+            }
+            // генерируем код для подтверждения почты
+            String confirmCode = Guid.NewGuid().ToString()[..6].ToUpperInvariant();
+            try
+            {
+                _emailService.Send(
+                    email,
+                    $"To confirm Email enter code <b>{confirmCode}</b>",
+                    "Email changed");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("UpdateEmail exception {ex}", ex.Message);
+                return Json(new { success = false, message = "Email invalid" });
+            }
 
+            user.Email = email;
+            user.ConfirmCode = confirmCode;  // сохраняем в БД код подтверждения почты
+
+            _dataContext.SaveChanges();
+            return Json(new { success = true });
+        }
         public IActionResult Index()
         {
             return View();
@@ -52,13 +102,20 @@ namespace ASP_111.Controllers
                         Avatar = user.Avatar ?? "no-avatar.png",
                         CreatedDt = user.CreatedDt,
                         Login = user.Login,
+                        IsEmailConfirmed = (user.ConfirmCode == null),
                     };
                 }
             }
             return View(model);
         }
 
-
+        /* Д.З. Ограничить отправку почты на изменение если по факту
+        * изменений не было (новый текст не отличается от исходного
+        * текста, даже если была клавиатурная активность)
+        * Создать метод (action) для подтверждения кода - данные
+        * о пользователе взять из контекста, получить код, проверить
+        * и, в случае успеха, заменить его на null в БД
+        */
 
         [HttpPost]  // этот метод будет вызываться по AJAX при аутентификации
         public JsonResult Auth([FromBody] AuthAjaxModel model)

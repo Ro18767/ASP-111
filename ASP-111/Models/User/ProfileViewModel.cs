@@ -7,5 +7,6 @@
         public String Login { get; set; } = null!;
         public String? Avatar { get; set; }
         public DateTime CreatedDt { get; set; }
+        public bool IsEmailConfirmed { get; set; }
     }
 }
