@@ -40,6 +40,8 @@ function authButtonClick() {
             // console.log(j);
             if (j.success == true) {
                 location = location;
+                return;
             }
+            alert("неверные даные для входа");
         });
 }
